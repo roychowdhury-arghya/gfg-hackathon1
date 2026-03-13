@@ -8,13 +8,15 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-content: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #f8fafc;
+  background: linear-gradient(135deg,#9a9a78,#dbdbe3,#77a0bc);
 }
 
 #root {
   width: 100%;
 }
+html {
+  scroll-behavior: smooth;
+}
+

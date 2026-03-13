@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { 
+import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
 } from 'recharts';
-import { 
-  Send, Database, LayoutDashboard, MessageSquare, 
+import {
+  Send, Database, LayoutDashboard, MessageSquare,
   Upload, Loader2, AlertCircle, TrendingUp, Info, ChevronRight, Download
 } from 'lucide-react';
 
@@ -17,10 +18,10 @@ const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Environment handles this
  * We prioritize the 2.5-flash-preview then fallback to stable 1.5 versions.
  */
 const MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b"
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-pro-latest"
 ];
+
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -34,7 +35,7 @@ export default function App() {
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
   const [activeModel, setActiveModel] = useState(MODELS[0]);
-  
+
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
@@ -83,7 +84,7 @@ export default function App() {
   const callGemini = async (prompt, modelIndex = 0, retryCount = 0) => {
     const currentModel = MODELS[modelIndex];
     setActiveModel(currentModel);
-    
+
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
 
     try {
@@ -137,7 +138,7 @@ export default function App() {
 
       const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!content) throw new Error("API returned an empty response.");
-      
+
       return JSON.parse(content);
     } catch (err) {
       if (modelIndex < MODELS.length - 1 && (err.message.includes("not found") || err.message.includes("not supported"))) {
@@ -193,14 +194,14 @@ export default function App() {
     }[chart.type] || BarChart;
 
     return (
-      <div key={index} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[420px] transition-all hover:shadow-md">
+      <div key={index} className="bg-white/60 backdrop-blur-xl p-6 rounded-2xl border border-white/40 shadow-xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col">
             <h3 className="font-bold text-slate-800 tracking-tight">{chart.title}</h3>
             <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest mt-0.5">{chart.description || 'Visualization'}</p>
           </div>
           <div className="bg-slate-50 p-2 rounded-lg">
-             <Info size={14} className="text-slate-400" />
+            <Info size={14} className="text-slate-400" />
           </div>
         </div>
         <div className="flex-1 w-full min-h-0">
@@ -209,40 +210,40 @@ export default function App() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               {!isPie && (
                 <>
-                  <XAxis 
-                    dataKey={chart.xAxisKey} 
-                    fontSize={11} 
-                    tickLine={false} 
-                    axisLine={false} 
-                    tick={{ fill: '#94a3b8' }} 
+                  <XAxis
+                    dataKey={chart.xAxisKey}
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#94a3b8' }}
                     dy={10}
                   />
-                  <YAxis 
-                    fontSize={11} 
-                    tickLine={false} 
-                    axisLine={false} 
-                    tick={{ fill: '#94a3b8' }} 
+                  <YAxis
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#94a3b8' }}
                     dx={-10}
                   />
                 </>
               )}
-              <Tooltip 
+              <Tooltip
                 cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ 
-                  borderRadius: '12px', 
-                  border: 'none', 
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: 'none',
                   boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
                   padding: '12px'
-                }} 
+                }}
               />
               <Legend verticalAlign="top" align="right" iconType="circle" />
-              
+
               {chart.type === 'pie' && (
-                <Pie 
-                  data={csvData} 
-                  dataKey={chart.yAxisKey} 
-                  nameKey={chart.xAxisKey} 
-                  outerRadius={100} 
+                <Pie
+                  data={csvData}
+                  dataKey={chart.yAxisKey}
+                  nameKey={chart.xAxisKey}
+                  outerRadius={100}
                   innerRadius={60}
                   paddingAngle={5}
                   label
@@ -252,33 +253,33 @@ export default function App() {
               )}
 
               {chart.type === 'area' && (
-                <Area 
-                  type="monotone" 
-                  dataKey={chart.yAxisKey} 
-                  stroke="#3b82f6" 
-                  strokeWidth={3} 
-                  fill="#3b82f6" 
-                  fillOpacity={0.1} 
+                <Area
+                  type="monotone"
+                  dataKey={chart.yAxisKey}
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  fill="#3b82f6"
+                  fillOpacity={0.1}
                 />
               )}
 
               {chart.type === 'line' && (
-                <Line 
-                  type="monotone" 
-                  dataKey={chart.yAxisKey} 
-                  stroke="#3b82f6" 
-                  strokeWidth={3} 
-                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }} 
-                  activeDot={{ r: 6 }} 
+                <Line
+                  type="monotone"
+                  dataKey={chart.yAxisKey}
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                  activeDot={{ r: 6 }}
                 />
               )}
 
               {chart.type === 'bar' && (
-                <Bar 
-                  dataKey={chart.yAxisKey} 
-                  fill="#3b82f6" 
-                  radius={[6, 6, 0, 0]} 
-                  barSize={32} 
+                <Bar
+                  dataKey={chart.yAxisKey}
+                  fill="#3b82f6"
+                  radius={[6, 6, 0, 0]}
+                  barSize={32}
                 />
               )}
             </ChartComponent>
@@ -289,8 +290,8 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-[#fcfdfe] text-slate-900 font-sans overflow-hidden">
-      <aside className="w-[380px] border-r border-slate-100 bg-white flex flex-col shadow-[20px_0_40px_-20px_rgba(0,0,0,0.02)] z-20">
+    <div className="flex h-screen text-slate-900 font-sans overflow-hidden">
+      <aside className="w-[380px] border-r border-white/40 bg-white/70 backdrop-blur-xl flex flex-col">
         <div className="p-8 pb-6">
           <div className="flex items-center gap-3 mb-8">
             <div className="bg-blue-600 p-2.5 rounded-2xl shadow-lg shadow-blue-100">
@@ -302,8 +303,8 @@ export default function App() {
             </div>
           </div>
 
-          <div 
-            onClick={() => fileInputRef.current.click()} 
+          <div
+            onClick={() => fileInputRef.current.click()}
             className={`group cursor-pointer w-full flex flex-col items-center justify-center gap-3 px-6 py-10 border-2 border-dashed rounded-3xl transition-all ${csvData ? 'border-blue-100 bg-blue-50/30' : 'border-slate-200 hover:border-blue-400 hover:bg-slate-50'}`}
           >
             <div className={`p-3 rounded-full transition-colors ${csvData ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
@@ -320,18 +321,18 @@ export default function App() {
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-hide">
           {messages.length === 0 && !isProcessing && (
             <div className="py-10 text-center">
-               <p className="text-xs font-semibold text-slate-300 uppercase tracking-widest mb-4">Quick Suggestions</p>
-               <div className="flex flex-col gap-2">
-                 {['Show sales trends', 'Top products by revenue', 'Distribution of customers'].map((s, idx) => (
-                   <button 
-                    key={idx} 
+              <p className="text-xs font-semibold text-slate-300 uppercase tracking-widest mb-4">Quick Suggestions</p>
+              <div className="flex flex-col gap-2">
+                {['Show sales trends', 'Top products by revenue', 'Distribution of customers'].map((s, idx) => (
+                  <button
+                    key={idx}
                     onClick={() => { setQuery(s); }}
                     className="text-xs text-left px-4 py-3 bg-slate-50 rounded-xl text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors border border-transparent hover:border-blue-100"
-                   >
-                     {s}
-                   </button>
-                 ))}
-               </div>
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {messages.map((msg, i) => (
@@ -358,16 +359,16 @@ export default function App() {
 
         <div className="p-6 bg-white border-t border-slate-50">
           <form onSubmit={handleQuery} className="relative group">
-            <input 
-              value={query} 
-              onChange={(e) => setQuery(e.target.value)} 
-              placeholder={csvData ? "Ask me anything about your data..." : "Please upload data first"} 
-              disabled={!csvData || isProcessing} 
-              className="w-full bg-slate-50 border-none rounded-2xl pl-5 pr-14 py-4 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all disabled:opacity-50 text-sm font-medium placeholder:text-slate-400" 
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={csvData ? "Ask me anything about your data..." : "Please upload data first"}
+              disabled={!csvData || isProcessing}
+              className="w-full bg-slate-50 border-none rounded-2xl pl-5 pr-14 py-4 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all disabled:opacity-50 text-sm font-medium placeholder:text-slate-400"
             />
-            <button 
-              type="submit" 
-              disabled={!query.trim() || isProcessing} 
+            <button
+              type="submit"
+              disabled={!query.trim() || isProcessing}
               className="absolute right-2 top-2 p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-slate-200 transition-all shadow-md shadow-blue-200 disabled:shadow-none active:scale-95"
             >
               <Send size={18} />
@@ -377,7 +378,7 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto bg-[#fcfdfe] relative">
+      <main className="flex-1 overflow-y-auto relative">
         {error && (
           <div className="m-8 bg-red-50 border border-red-100 text-red-800 p-6 rounded-3xl flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm">
             <div className="flex items-center gap-3 font-bold text-red-600">
@@ -391,23 +392,96 @@ export default function App() {
             </div>
           </div>
         )}
-        
+
         {!dashboard ? (
-          <div className="h-full flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto space-y-8 animate-in fade-in duration-700">
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-500 blur-[80px] opacity-10 rounded-full animate-pulse"></div>
-              <div className="relative w-24 h-24 bg-white rounded-[32px] flex items-center justify-center shadow-xl border border-slate-50">
-                <Database className="text-blue-600" size={40} />
+          <div className="min-h-screen flex flex-col">
+
+            {/* HERO SECTION */}
+            <section className="flex flex-col lg:flex-row items-center justify-between px-16 py-20 gap-16">
+
+              {/* LEFT SIDE TEXT */}
+              <div className="max-w-xl space-y-6">
+                <h1 className="text-5xl font-black tracking-tight text-slate-900 leading-tight">
+                  Instant <span className="text-blue-600">BI</span>
+                </h1>
+
+                <p className="text-lg text-slate-600 leading-relaxed">
+                  Turn raw CSV data into beautiful dashboards instantly.
+                  Ask questions in plain English and let AI generate powerful
+                  visual analytics in seconds.
+                </p>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => fileInputRef.current.click()}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
+                  >
+                    Upload Dataset
+                  </button>
+
+                  <button
+                    className="px-6 py-3 border border-slate-200 rounded-xl font-semibold hover:bg-slate-50 transition"
+                  >
+                    Learn More
+                  </button>
+                </div>
               </div>
-            </div>
-            <div>
-              <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Intelligence on Demand</h2>
-              <p className="text-slate-500 leading-relaxed font-medium">
-                Connect your spreadsheets to transform raw rows into executive-level visual insights. Ask complex questions, find trends, and uncover hidden patterns in seconds.
-              </p>
-            </div>
+
+
+              {/* RIGHT SIDE SPINNING LOGO */}
+              <div className="flex items-center justify-center">
+
+                <div className="
+          w-56 h-56 
+          bg-white 
+          rounded-3xl 
+          shadow-2xl 
+          flex items-center justify-center
+          animate-spin
+          hover:animate-none
+          hover:grayscale
+          transition
+        ">
+                  <Database size={90} className="text-blue-600" />
+                </div>
+
+              </div>
+
+            </section>
+
+
+            {/* FEATURES SECTION */}
+            <section className="px-16 py-20 grid md:grid-cols-3 gap-10">
+
+              <div className="bg-white p-8 rounded-3xl shadow-md hover:shadow-xl transition">
+                <LayoutDashboard className="text-blue-600 mb-4" size={28} />
+                <h3 className="font-bold text-lg mb-2">AI Dashboards</h3>
+                <p className="text-slate-500 text-sm">
+                  Generate complete BI dashboards automatically using natural language.
+                </p>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl shadow-md hover:shadow-xl transition">
+                <TrendingUp className="text-blue-600 mb-4" size={28} />
+                <h3 className="font-bold text-lg mb-2">Smart Insights</h3>
+                <p className="text-slate-500 text-sm">
+                  Discover hidden trends and actionable business insights instantly.
+                </p>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl shadow-md hover:shadow-xl transition">
+                <Database className="text-blue-600 mb-4" size={28} />
+                <h3 className="font-bold text-lg mb-2">CSV to BI</h3>
+                <p className="text-slate-500 text-sm">
+                  Upload any CSV dataset and transform it into visual analytics.
+                </p>
+              </div>
+
+            </section>
+
           </div>
         ) : (
+
           <div className="p-10 max-w-7xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="space-y-2">
