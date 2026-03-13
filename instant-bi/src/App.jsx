@@ -18,9 +18,10 @@ const apiKey = import.meta.env.VITE_GEMINI_API_KEY; // Environment handles this
  * We prioritize the 2.5-flash-preview then fallback to stable 1.5 versions.
  */
 const MODELS = [
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-pro-latest"
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
 ];
+
 
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
@@ -392,6 +393,24 @@ export default function App() {
             </div>
           </div>
         )}
+        
+
+        {/* {!dashboard ? (
+          <div className="h-full flex flex-col items-center justify-center p-8 text-center max-w-lg mx-auto space-y-8 animate-in fade-in duration-700">
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-500 blur-[80px] opacity-10 rounded-full animate-pulse"></div>
+              <div className="relative w-24 h-24 bg-white rounded-[32px] flex items-center justify-center shadow-xl border border-slate-50">
+                <Database className="text-blue-600" size={40} />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tight">Intelligence on Demand</h2>
+              <p className="text-slate-500 leading-relaxed font-medium">
+                Connect your spreadsheets to transform raw rows into executive-level visual insights. Ask complex questions, find trends, and uncover hidden patterns in seconds.
+              </p>
+            </div>
+          </div>
+        ) : ( */}
 
         {!dashboard ? (
           <div className="min-h-screen flex flex-col">
