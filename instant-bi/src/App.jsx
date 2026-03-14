@@ -9,8 +9,14 @@ import {
   Zap, BarChart2, ArrowRight, Github, Twitter, Linkedin, Sun, Moon
 } from 'lucide-react';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const MODELS = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"];
+const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+const MODELS = [
+  "openrouter/auto",                          // auto-picks best available free model
+  "meta-llama/llama-3.3-70b-instruct:free",  // confirmed working March 2026
+  "meta-llama/llama-3.1-8b-instruct:free",   // confirmed working March 2026
+  "mistralai/mistral-small-3.1-24b-instruct:free", // confirmed working
+  "deepseek/deepseek-r1-distill-llama-8b:free",    // confirmed working
+];
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 // ─── Theme tokens ────────────────────────────
@@ -418,36 +424,37 @@ function ToolPage({ onBack, dark, onToggleDark }) {
   const callGemini = async (prompt, modelIndex = 0, retryCount = 0) => {
     const currentModel = MODELS[modelIndex];
     setActiveModel(currentModel);
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'InstantBI',
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: {
-              type: 'OBJECT',
-              properties: {
-                title: { type: 'STRING' }, summary: { type: 'STRING' },
-                insights: { type: 'ARRAY', items: { type: 'STRING' } },
-                charts: { type: 'ARRAY', items: { type: 'OBJECT', properties: { type: { type: 'STRING', enum: ['bar','line','pie','area'] }, title: { type: 'STRING' }, xAxisKey: { type: 'STRING' }, yAxisKey: { type: 'STRING' }, description: { type: 'STRING' } }, required: ['type','title','xAxisKey','yAxisKey'] } }
-              }, required: ['title','summary','charts']
-            }
-          }
+          model: currentModel,
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 2048,
         })
       });
       const result = await response.json();
       if (!response.ok) {
-        if ((response.status === 404 || response.status === 400) && modelIndex < MODELS.length - 1) return callGemini(prompt, modelIndex + 1, 0);
-        if ((response.status === 429 || response.status >= 500) && retryCount < 3) { await new Promise(r => setTimeout(r, Math.pow(2, retryCount) * 1000)); return callGemini(prompt, modelIndex, retryCount + 1); }
+        // Try next model on any error
+        if (modelIndex < MODELS.length - 1) return callGemini(prompt, modelIndex + 1, 0);
         throw new Error(result.error?.message || `API Error: ${response.status}`);
       }
-      const content = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!content) throw new Error('API returned an empty response.');
-      return JSON.parse(content);
+      const raw = result.choices?.[0]?.message?.content;
+      if (!raw) throw new Error('API returned an empty response.');
+      // Strip markdown fences then extract JSON object
+      const cleaned = raw.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No valid JSON found in response.');
+      return JSON.parse(jsonMatch[0]);
     } catch (err) {
-      if (modelIndex < MODELS.length - 1 && (err.message.includes('not found') || err.message.includes('not supported'))) return callGemini(prompt, modelIndex + 1, 0);
+      if (modelIndex < MODELS.length - 1) return callGemini(prompt, modelIndex + 1, 0);
       throw err;
     }
   };
@@ -458,8 +465,20 @@ function ToolPage({ onBack, dark, onToggleDark }) {
     const userQuery = query; setQuery('');
     setMessages(prev => [...prev, { role: 'user', content: userQuery }]);
     setIsProcessing(true); setError(null);
-    const sampleData = JSON.stringify(csvData.slice(0, 3));
-    const systemPrompt = `You are an expert Data Analyst. Given a CSV dataset schema and a user query, generate a structured BI dashboard configuration.\nDataset Schema: [${headers.join(', ')}]\nSample Data: ${sampleData}\nUser Query: "${userQuery}"\nInstructions:\n1. Select 1 to 4 charts (bar, line, pie, area).\n2. Ensure xAxisKey and yAxisKey exactly match the provided schema.\n3. Provide 2-4 actionable insights based on the data context.`;
+    const sampleData = JSON.stringify(csvData.slice(0, 1));
+    const systemPrompt = `You are a Data Analyst. Generate a BI dashboard config as JSON.
+Dataset columns: [${headers.join(', ')}]
+Sample row: ${sampleData}
+User query: "${userQuery}"
+
+Reply ONLY with raw JSON (no markdown, no explanation):
+{
+  "title": "string",
+  "summary": "string",
+  "insights": ["string","string"],
+  "charts": [{"type":"bar","title":"string","xAxisKey":"column_name","yAxisKey":"column_name","description":"string"}]
+}
+Rules: type = bar|line|pie|area. xAxisKey/yAxisKey must match exact column names. 1-4 charts. 2-4 insights.`;
     try {
       const dashboardConfig = await callGemini(systemPrompt);
       setDashboard(dashboardConfig);
